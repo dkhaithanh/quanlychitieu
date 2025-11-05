@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trình quản lý Chi tiêu AI</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tải Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Tải Font Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/lucide@latest/dist/lucide.min.js"></script>
+
+    <!-- Tải CSS tùy chỉnh -->
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        .list-action-btn {
+            @apply text-xs font-medium px-2 py-1 rounded-md;
+        }
+        .list-action-btn-edit {
+             @apply bg-blue-100 text-blue-700 hover:bg-blue-200;
+        }
+        .list-action-btn-delete {
+             @apply bg-red-100 text-red-700 hover:bg-red-200;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <!-- 
+      ================================================================
+      MÀN HÌNH TẢI ỨNG DỤNG (LUÔN HIỂN THỊ ĐẦU TIÊN)
+      ================================================================
+    -->
+    <div id="app-loading-screen" class="flex items-center justify-center h-screen bg-white">
+        <div class="text-center">
+            <div class="spinner !border-blue-600 !border-l-transparent mx-auto"></div>
+            <p class="mt-3 text-lg font-medium text-gray-700">Đang tải và kết nối...</p>
+        </div>
+    </div>
+
+    <!-- 
+      ================================================================
+      MÀN HÌNH ĐĂNG NHẬP / ĐĂNG KÝ
+      ================================================================
+    -->
+    <div id="auth-container" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg">
+
+            <!-- Form Đăng nhập (Mặc định) -->
+            <div id="login-form" class="main-view">
+                <h2 class="text-3xl font-bold text-center text-gray-900 mb-6">Đăng nhập</h2>
+                <form id="login-form-main" class="space-y-4">
+                    <div>
+                        <label for="login-email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" id="login-email" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="login-password" class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+                        <input type="password" id="login-password" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow hover:bg-blue-700">
+                        Đăng nhập
+                    </button>
+                </form>
+                <p class="text-sm text-center text-gray-600 mt-4">
+                    Chưa có tài khoản? 
+                    <button id="show-register-form-btn" class="font-medium text-blue-600 hover:underline">Đăng ký ngay</button>
+                </p>
+                <!-- Phân cách -->
+                <div class="my-4 flex items-center">
+                    <div class="flex-grow border-t border-gray-200"></div>
+                    <span class="flex-shrink mx-2 text-xs text-gray-400">hoặc tiếp tục với</span>
+                    <div class="flex-grow border-t border-gray-200"></div>
+                </div>
+                <!-- Đăng nhập Google -->
+                <button id="google-signin-btn" class="w-full flex justify-center items-center space-x-2 border border-gray-300 text-gray-700 font-medium py-2.5 px-4 rounded-lg shadow-sm hover:bg-gray-50">
+                    <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path><path fill="none" d="M0 0h48v48H0z"></path></svg>
+                    <span>Đăng nhập bằng Google</span>
+                </button>
+            </div>
+
+            <!-- Form Đăng ký (Bị ẩn) -->
+            <div id="register-form" class="main-view hidden">
+                <h2 class="text-3xl font-bold text-center text-gray-900 mb-6">Tạo tài khoản</h2>
+                <form id="register-form-main" class="space-y-4">
+                    <div>
+                        <label for="register-name" class="block text-sm font-medium text-gray-700">Tên hiển thị</label>
+                        <input type="text" id="register-name" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="register-email" class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" id="register-email" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="register-password" class="block text-sm font-medium text-gray-700">Mật khẩu</label>
+                        <input type="password" id="register-password" required minlength="6" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow hover:bg-blue-700">
+                        Đăng ký
+                    </button>
+                </form>
+                <p class="text-sm text-center text-gray-600 mt-4">
+                    Đã có tài khoản? 
+                    <button id="show-login-form-btn" class="font-medium text-blue-600 hover:underline">Đăng nhập</button>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 
+      ================================================================
+      MÀN HÌNH ONBOARDING (SAU KHI ĐĂNG NHẬP LẦN ĐẦU)
+      ================================================================
+    -->
+    <div id="onboarding-screen" class="hidden min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-lg text-center">
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Chào mừng bạn!</h2>
+            <p class="text-gray-600 mb-6">Bạn muốn quản lý chi tiêu cho ai?</p>
+            
+            <button id="create-personal-wallet-btn" class="w-full text-left p-4 border border-gray-300 rounded-lg hover:bg-gray-50 mb-4">
+                <p class="text-lg font-semibold text-blue-600">Cá nhân</p>
+                <p class="text-sm text-gray-500">Tạo một ví riêng tư cho chi tiêu của riêng bạn.</p>
+            </button>
+            
+            <button id="show-group-form-btn" class="w-full text-left p-4 border border-gray-300 rounded-lg hover:bg-gray-50">
+                <p class="text-lg font-semibold text-green-600">Gia đình / Nhóm bạn</p>
+                <p class="text-sm text-gray-500">Tạo ví chung và mời người khác cùng tham gia.</p>
+            </button>
+
+            <!-- Form tạo nhóm (Bị ẩn) -->
+            <div id="group-wallet-form" class="hidden mt-6 space-y-4">
+                <label for="group-wallet-name-input" class="block text-sm font-medium text-gray-700 text-left">Tên cho ví đầu tiên của bạn</label>
+                <input type="text" id="group-wallet-name-input" placeholder="Ví dụ: 'Chi tiêu cả nhà'" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <button id="create-group-wallet-btn" class="w-full bg-blue-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow hover:bg-blue-700">
+                    Bắt đầu
+                </button>
+            </div>
+            
+            <div class="mt-6">
+                <button id="onboarding-cancel-btn" class="text-sm text-gray-600 hover:text-gray-900">
+                    Hủy và quay lại
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 
+      ================================================================
+      ỨNG DỤNG CHÍNH (SAU KHI CÓ VÍ)
+      ================================================================
+    -->
+    <!-- SỬA LỖI: Thêm 'overflow-hidden' để fix lỗi h-screen trên mobile -->
+    <div id="main-app-content" class="hidden h-screen overflow-hidden flex flex-col max-w-lg mx-auto bg-white shadow-lg">
+
+        <!-- Header (Hiển thị tên ví) -->
+        <header class="p-3 border-b bg-white text-center shadow-sm relative">
+            <h1 id="current-wallet-name" class="text-lg font-bold text-blue-600">Đang tải ví...</h1>
+            <p id="current-wallet-type" class="text-xs text-gray-400">Ví cá nhân</p>
+            
+            <button id="wallet-switcher-btn" class="absolute top-1/2 -translate-y-1/2 right-3 p-2 text-gray-500 hover:text-blue-600">
+                 <i data-lucide="repeat-2" class="w-5 h-5"></i>
+            </button>
+        </header>
+
+        <!-- Vùng nội dung chính (có thể cuộn) -->
+        <main class="flex-grow overflow-y-auto p-4 bg-gray-50">
+
+            <!-- View 1: Tổng quan (Dashboard) -->
+            <div id="dashboard-view" class="main-view space-y-5">
+                
+                <div class="bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-xl p-6 shadow-lg space-y-4">
+                    <div class="flex justify-between items-center">
+                         <p class="text-sm text-blue-100 opacity-90">Số dư hiện tại</p>
+                         <i data-lucide="wallet" class="w-5 h-5 text-blue-200 opacity-80"></i>
+                    </div>
+                    <p id="total-balance" class="text-4xl font-bold tracking-tight">0 ₫</p>
+                    <div class="flex justify-between items-end mt-4 pt-4 border-t border-blue-500 border-opacity-30">
+                        <div class="text-left">
+                            <p class="text-xs text-blue-100 opacity-90 mb-1">Thu tháng này</p>
+                            <p id="month-income" class="font-semibold text-lg text-green-300">0 ₫</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-blue-100 opacity-90 mb-1">Chi tháng này</p>
+                            <p id="month-expense" class="font-semibold text-lg text-red-300">0 ₫</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Giao dịch gần đây -->
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-2">Giao dịch gần đây</h2>
+                    <ul id="recent-transactions-list" class="bg-white rounded-lg shadow-sm divide-y divide-gray-100">
+                        <!-- Dữ liệu sẽ được chèn bằng JS -->
+                        <li class="text-gray-500 text-center py-4 px-4">Đang tải giao dịch...</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- View 2: Thêm Giao dịch -->
+            <div id="add-view" class="main-view hidden flex flex-col">
+                <h2 class="text-lg font-semibold text-gray-800 mb-3">Thêm giao dịch (AI)</h2>
+                <p class="text-sm text-gray-500 mb-3">Thử gõ: "Ăn sáng 30k" hoặc "Lương 10tr hôm qua"</p>
+                
+                <!-- Khung chat -->
+                <div class="flex-grow bg-white rounded-lg border border-gray-200 overflow-y-auto p-3 space-y-3" id="chat-messages" style="max-height: 300px;">
+                    <div class="flex justify-start">
+                        <div class="bg-gray-200 text-gray-700 rounded-lg py-2 px-4 max-w-[70%]">
+                            Chào bạn! Bạn muốn ghi lại khoản thu/chi nào?
+                        </div>
+                    </div>
+                    <!-- Tin nhắn sẽ được thêm vào đây -->
+                </div>
+                
+                <!-- Ô nhập liệu chat -->
+                <div class="mt-3 flex space-x-2">
+                    <input type="text" id="chat-input" placeholder="Nhập nội dung..." class="flex-grow border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="chat-send-btn" class="bg-blue-600 text-white p-2 rounded-lg flex-shrink-0">
+                        <i data-lucide="send" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Đường phân cách -->
+                <div class="my-6 text-center">
+                    <span class="text-sm text-gray-400">hoặc nhập thủ công</span>
+                </div>
+
+                <!-- Form nhập liệu thủ công -->
+                <form id="manual-add-form" class="space-y-4">
+                    <div>
+                        <label for="trans-type" class="block text-sm font-medium text-gray-700">Loại</label>
+                        <select id="trans-type" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="expense">Chi tiêu</option>
+                            <option value="income">Thu nhập</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="trans-category" class="block text-sm font-medium text-gray-700">Danh mục</label>
+                        <select id="trans-category" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <!-- JS sẽ điền các option mặc định cho 'expense' -->
+                        </select>
+                    </div>
+                     <div>
+                        <label for="trans-amount" class="block text-sm font-medium text-gray-700">Số tiền (VND)</label>
+                        <input type="number" id="trans-amount" placeholder="20000" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="trans-description" class="block text-sm font-medium text-gray-700">Mô tả (Không bắt buộc)</label>
+                        <input type="text" id="trans-description" placeholder="Ăn sáng bánh mì" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-blue-700">
+                        Lưu thủ công
+                    </button>
+                </form>
+            </div>
+
+            <!-- View 3: Báo cáo (Reports) -->
+            <div id="reports-view" class="main-view hidden space-y-5">
+                <h2 class="text-lg font-semibold text-gray-800">Báo cáo & Thống kê</h2>
+                
+                <!-- Bộ lọc -->
+                <div>
+                    <label for="reports-filter" class="block text-sm font-medium text-gray-700">Xem theo</label>
+                    <select id="reports-filter" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="this-month">Tháng này</option>
+                        <option value="last-month">Tháng trước</option>
+                        <option value="this-year">Năm nay</option>
+                    </select>
+                </div>
+
+                <!-- Biểu đồ Thu/Chi -->
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                    <h3 class="font-semibold text-gray-700 mb-2">Biểu đồ Thu vs. Chi</h3>
+                    <canvas id="incomeExpenseChart"></canvas>
+                </div>
+                
+                <!-- Biểu đồ Cơ cấu chi tiêu -->
+                <div class="bg-white p-4 rounded-lg shadow-sm">
+                    <h3 class="font-semibold text-gray-700 mb-2">Cơ cấu Chi tiêu</h3>
+                    <div class="max-w-[300px] mx-auto">
+                        <canvas id="categoryPieChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Danh sách chi tiết -->
+                 <div>
+                    <h3 class="font-semibold text-gray-700 mb-2">Chi tiết Giao dịch</h3>
+                    <ul id="report-transaction-list" class="bg-white rounded-lg shadow-sm">
+                        <!-- Dữ liệu sẽ được chèn bằng JS -->
+                        <li class="text-gray-500 text-center py-4">Đang tải dữ liệu...</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- View 4: Phân tích AI -->
+            <div id="ai-view" class="main-view hidden space-y-4">
+                 <h2 class="text-lg font-semibold text-gray-800">Phân tích bằng AI</h2>
+                <p class="text-sm text-gray-600">
+                    Hãy để Gemini phân tích thói quen chi tiêu của bạn và đưa ra lời khuyên hữu ích. 
+                    (Cần có ít nhất 3 giao dịch để phân tích)
+                </p>
+                
+                <button id="run-ai-analysis-btn" class="w-full bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow hover:bg-green-700 flex items-center justify-center space-x-2">
+                    <i data-lucide="sparkles" class="w-5 h-5"></i>
+                    <span>Chạy phân tích ngay</span>
+                </button>
+                
+                <!-- Kết quả phân tích -->
+                <div id="ai-analysis-result" class="mt-4 bg-white p-4 rounded-lg shadow-inner min-h-[150px]">
+                    <p class="text-gray-500 text-center">Nhấn nút "Chạy phân tích" để nhận lời khuyên từ AI.</p>
+                </div>
+            </div>
+
+            <!-- View 5: Cài đặt (Settings) -->
+            <div id="settings-view" class="main-view hidden space-y-6">
+                
+                <!-- Quản lý ví -->
+                <div id="wallet-management-section">
+                    <h2 class="text-lg font-semibold text-gray-800 mb-3">Quản lý Ví</h2>
+                    
+                    <div class="bg-white rounded-lg shadow-sm border mb-4">
+                        <button id="settings-switch-wallet-btn" class="w-full text-left p-4 border-b flex justify-between items-center text-gray-800 hover:bg-gray-50">
+                            <span>Chuyển đổi / Quản lý ví</span>
+                            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                        </button>
+                        <button id="settings-create-wallet-btn" class="w-full text-left p-4 flex justify-between items-center text-gray-800 hover:bg-gray-50">
+                            <span>Tạo ví mới</span>
+                            <i data-lucide="plus" class="w-5 h-5 text-gray-400"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Form mời (chỉ cho ví nhóm) -->
+                    <form id="invite-form" class="hidden mb-4 space-y-2">
+                        <label for="invite-email-input" class="block text-sm font-medium text-gray-700">Mời thành viên mới (nhập email)</label>
+                        <div class="flex space-x-2">
+                            <input type="email" id="invite-email-input" required placeholder="example@gmail.com" class="flex-grow border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button type="submit" class="bg-blue-600 text-white p-2 rounded-lg flex-shrink-0">
+                                <i data-lucide="send" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Danh sách thành viên (chỉ cho ví nhóm) -->
+                    <div id="member-list-section" class="hidden mb-4">
+                         <h3 class="font-medium text-gray-700 mb-2">Thành viên</h3>
+                         <ul id="member-list" class="bg-white rounded-lg border divide-y divide-gray-100">
+                             <!-- JS chèn vào đây -->
+                         </ul>
+                    </div>
+                    
+                    <div id="log-view-section" class="hidden mb-4">
+                         <h3 class="font-medium text-gray-700 mb-2">Hoạt động</h3>
+                         <div class="bg-white rounded-lg shadow-sm border">
+                            <button id="show-invitations-btn" class="w-full text-left p-4 border-b flex justify-between items-center text-gray-800 hover:bg-gray-50">
+                                <span class="flex items-center space-x-2">
+                                    <span>Lời mời của bạn</span>
+                                    <span id="invitation-badge" class="hidden bg-red-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">!</span>
+                                </span>
+                                <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                            </button>
+                             <button id="show-log-btn" class="w-full text-left p-4 flex justify-between items-center text-gray-800 hover:bg-gray-50">
+                                <span>Xem Log Hoạt Động</span>
+                                <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                             </button>
+                         </div>
+                    </div>
+                </div>
+                
+                <!-- Tài khoản -->
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-800 mb-3">Tài khoản</h2>
+                    <div class="bg-white rounded-lg shadow-sm border">
+                        <div class="p-4 border-b">
+                            <p class="text-sm text-gray-500">Đăng nhập với email:</p>
+                            <p id="user-email-display" class="font-medium text-gray-800 break-words">...</p>
+                        </div>
+                         <button id="profile-btn" class="w-full text-left p-4 border-b flex justify-between items-center text-gray-800 hover:bg-gray-50">
+                            <span>Thông tin cá nhân</span>
+                            <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                        </button>
+                         <div class="p-4">
+                            <button id="logout-btn" class="w-full text-left text-red-600 font-medium">
+                                Đăng xuất
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </main>
+
+        <!-- Thanh điều hướng dưới cùng -->
+        <nav class="grid grid-cols-4 gap-1 p-2 border-t bg-white shadow-inner-top">
+            <button id="nav-dashboard" class="nav-btn flex flex-col items-center p-2 rounded-lg text-blue-600 font-semibold">
+                <img src="./logo/tongquan.svg" class="w-6 h-6 mb-1" alt="Tổng quan">
+                <span class="text-xs">Tổng quan</span>
+            </button>
+            <button id="nav-add" class="nav-btn flex flex-col items-center p-2 rounded-lg text-gray-500">
+                <img src="./logo/themmoi.svg" class="w-6 h-6 mb-1" alt="Thêm mới">
+                <span class="text-xs">Thêm mới</span>
+            </button>
+            <button id="nav-reports" class="nav-btn flex flex-col items-center p-2 rounded-lg text-gray-500">
+                <img src="./logo/baocao.svg" class="w-6 h-6 mb-1" alt="Báo cáo">
+                <span class="text-xs">Báo cáo</span>
+            </button>
+            <button id="nav-settings" class="nav-btn flex flex-col items-center p-2 rounded-lg text-gray-500">
+                <img src="./logo/caidat.svg" class="w-6 h-6 mb-1" alt="Cài đặt">
+                <span class="text-xs">Cài đặt</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- 
+      ================================================================
+      CÁC MODAL (Bị ẩn)
+      ================================================================
+    -->
+
+    <!-- Toast Notification (Thông báo) -->
+    <div id="toast-notification" class="hidden fixed top-5 left-1/2 -translate-x-1/2 z-[9999] text-white px-4 py-2 rounded-lg shadow-lg text-sm transition-transform duration-300 opacity-0 -translate-y-5">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Loading Overlay (Khi gọi API) -->
+    <div id="global-loading-overlay" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[9990] flex items-center justify-center">
+        <div class="spinner"></div>
+    </div>
+    
+    <!-- Modal xác nhận (Xóa) -->
+    <div id="confirmation-modal" class="hidden modal-container fixed inset-0 bg-black bg-opacity-50 z-[9995] flex items-center justify-center p-4">
+        <div class="modal-content bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h3 id="modal-title" class="text-lg font-semibold text-gray-900">Xác nhận</h3>
+            <p id="modal-message" class="mt-2 text-sm text-gray-600">Bạn có chắc chắn?</p>
+            <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                <button id="modal-confirm-btn" type="button" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:col-start-2 sm:text-sm">
+                    Xác nhận
+                </button>
+                <button id="modal-cancel-btn" type="button" class="modal-close-btn mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:col-start-1 sm:text-sm">
+                    Hủy
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal Chỉnh sửa Giao dịch -->
+    <div id="edit-transaction-modal" class="hidden modal-container fixed inset-0 bg-black bg-opacity-50 z-[9995] flex items-center justify-center p-4">
+        <div class="modal-content bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Chỉnh sửa Giao dịch</h3>
+            <form id="edit-transaction-form" class="space-y-4">
+                <input type="hidden" id="edit-trans-id">
+                <div>
+                    <label for="edit-trans-type" class="block text-sm font-medium text-gray-700">Loại</label>
+                    <select id="edit-trans-type" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <option value="expense">Chi tiêu</option>
+                        <option value="income">Thu nhập</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="edit-trans-category" class="block text-sm font-medium text-gray-700">Danh mục</label>
+                    <select id="edit-trans-category" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></select>
+                </div>
+                 <div>
+                    <label for="edit-trans-amount" class="block text-sm font-medium text-gray-700">Số tiền (VND)</label>
+                    <input type="number" id="edit-trans-amount" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="edit-trans-description" class="block text-sm font-medium text-gray-700">Mô tả</label>
+                    <input type="text" id="edit-trans-description" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:col-start-2 sm:text-sm">
+                        Lưu thay đổi
+                    </button>
+                    <button type="button" class="modal-close-btn mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:col-start-1 sm:text-sm">
+                        Hủy
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Modal Chọn/Đổi Ví -->
+    <div id="wallet-switcher-modal" class="hidden modal-container fixed inset-0 bg-black bg-opacity-50 z-[9995] flex items-center justify-center p-4">
+        <div class="modal-content bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+             <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Chọn hoặc Tạo Ví</h3>
+                <button id="refresh-wallet-list-btn" class="p-2 text-gray-500 hover:text-blue-600">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                </button>
+             </div>
+             
+             <!-- Danh sách các ví -->
+             <div>
+                 <label class="block text-sm font-medium text-gray-700 mb-2">Các ví của bạn</label>
+                 <ul id="wallet-list-modal" class="space-y-2 max-h-40 overflow-y-auto">
+                    <!-- JS chèn vào đây -->
+                    <li class="text-gray-500 text-center text-sm py-2">Đang tải...</li>
+                 </ul>
+             </div>
+             
+             <!-- Tạo ví mới -->
+             <div class="mt-6 pt-4 border-t">
+                 <button id="create-new-wallet-btn" class="w-full flex items-center justify-center space-x-2 text-blue-600 font-medium p-2 rounded-lg hover:bg-blue-50">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    <span>Tạo ví mới</span>
+                 </button>
+             </div>
+             
+             <button type="button" class="modal-close-btn mt-6 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:text-sm">
+                Đóng
+             </button>
+        </div>
+    </div>
+    
+    <!-- Modal Xem Log -->
+    <div id="activity-log-modal" class="hidden modal-container fixed inset-0 bg-black bg-opacity-50 z-[9995] flex items-center justify-center p-4">
+        <div class="modal-content bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+             <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Lịch sử hoạt động</h3>
+                <button id="refresh-log-btn" class="p-2 text-gray-500 hover:text-blue-600">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                </button>
+             </div>
+             
+             <div class="mt-4">
+                 <ul id="log-list-ul" class="space-y-3 max-h-64 overflow-y-auto text-sm">
+                    <!-- JS chèn vào đây -->
+                    <li class="text-gray-500 text-center text-sm py-2">Đang tải log...</li>
+                 </ul>
+             </div>
+             
+             <button type="button" class="modal-close-btn mt-6 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:text-sm">
+                Đóng
+             </button>
+        </div>
+    </div>
+
+    <!-- Modal Thông tin cá nhân -->
+    <div id="profile-modal" class="hidden modal-container fixed inset-0 bg-black bg-opacity-50 z-[9995] flex items-center justify-center p-4">
+        <div class="modal-content bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Thông tin cá nhân</h3>
+            <form id="profile-form" class="space-y-4">
+                <div>
+                    <label for="profile-name" class="block text-sm font-medium text-gray-700">Tên hiển thị</label>
+                    <input type="text" id="profile-name" required class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div>
+                    <label for="profile-dob" class="block text-sm font-medium text-gray-700">Ngày sinh</label>
+                    <input type="date" id="profile-dob" class="mt-1 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                </div>
+                <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 sm:col-start-2 sm:text-sm">
+                        Lưu thông tin
+                    </button>
+                    <button type="button" class="modal-close-btn mt-3 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:col-start-1 sm:text-sm">
+                        Hủy
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Lời mời -->
+    <div id="invitations-list-modal" class="hidden modal-container fixed inset-0 bg-black bg-opacity-50 z-[9995] flex items-center justify-center p-4">
+        <div class="modal-content bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
+             <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-900">Lời mời của bạn</h3>
+                <button id="refresh-invitations-btn" class="p-2 text-gray-500 hover:text-blue-600">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                </button>
+             </div>
+             
+             <div class="mt-4">
+                 <ul id="invitations-list-ul" class="space-y-3 max-h-64 overflow-y-auto text-sm">
+                    <!-- JS chèn vào đây -->
+                    <li id="no-invitations-msg" class="text-gray-500 text-center text-sm py-2">Bạn không có lời mời nào.</li>
+                 </ul>
+             </div>
+             
+             <button type="button" class="modal-close-btn mt-6 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:text-sm">
+                Đóng
+             </button>
+        </div>
+    </div>
+
+
+    <!-- 
+      ================================================================
+      TẢI CÁC FILE JAVASCRIPT MODULE
+      ================================================================
+    -->
+    <script type="module" src="firebase.js"></script>
+    <script type="module" src="auth.js"></script>
+    <script type="module" src="wallet.js"></script>
+    <script type="module" src="transactions.js"></script>
+    <script type="module" src="api.js"></script>
+    <script type="module" src="ui.js"></script>
+    
+    <!-- File main.js phải được tải CUỐI CÙNG -->
+    <script type="module" src="main.js"></script>
+
+</body>
+</html>
